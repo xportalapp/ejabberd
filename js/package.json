@@ -1,0 +1,11 @@
+{
+        "name": "ejabberd-native-auth",
+        "version": "0.0.1",
+        "description": "",
+        "author": "",
+        "private": true,
+        "dependencies": {
+                "@multiversx/sdk-native-auth-server": "^0.2.4",
+                "rimraf": "^3.0.2"
+        }
+}

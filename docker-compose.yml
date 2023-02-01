@@ -1,0 +1,16 @@
+version: "3.9"
+services:
+  ejabberd:
+    build: .
+    ports:
+      - "1883:1883"
+      - "4369-4399:4369-4399"
+      - "5210:5210"
+      - "5222:5222"
+      - "5269:5269"
+      - "5280:5280"
+      - "5443:5443"
+      - "5347:5347"
+    volumes:
+      - './container/conf/ejabberd.yml:/opt/ejabberd/conf/ejabberd.yml:ro'
+      - './container/logs:/opt/ejabberd/logs:rw'
