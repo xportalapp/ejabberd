@@ -8,13 +8,18 @@ async function bootstrap() {
 
     const nativeAuthServer = new sdk_native_auth_server_1.NativeAuthServer({
         apiUrl: 'https://devnet-api.multiversx.com',
-        maxExpirySeconds: 1200,
+        maxExpirySeconds: 7200,
     });
     process.stdin.on('data', async (data) => {
 
         const dataString = data.toString();
         logs += data;
         const [method, address, token] = utils_1.Utils.extractInfo(dataString);
+        if (method.endsWith('isuser')) {
+            writeResult(true);
+            return;
+        }
+
         if (!method.endsWith('auth')) {
             logs += `\n method is not auth: ${method}`
             writeResult(false);
