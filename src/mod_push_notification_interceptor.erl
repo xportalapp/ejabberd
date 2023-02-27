@@ -21,8 +21,16 @@ start(Host, Opts) ->
     RabbitHost = maps:get(rabbit_host, Opts, "host.docker.internal"),
     RabbitPort = maps:get(rabbit_port, Opts, 5672),
     RabbitExchange = maps:get(rabbit_exchange, Opts, "all_events"),
+    RabbitExchangeType = maps:get(rabbit_exchange_type, Opts, "direct"),
+    RabbitUser = maps:get(rabbit_user, Opts, "guest"),
+    RabbitPassword = maps:get(rabbit_password, Opts, "guest"),
 
-    {ok, Connection} = amqp_connection:start(#amqp_params_network{host = RabbitHost, port = RabbitPort}),
+    {ok, Connection} = amqp_connection:start(
+        #amqp_params_network{
+            username = list_to_binary(RabbitUser), 
+            password = list_to_binary(RabbitPassword),
+            host = RabbitHost, 
+            port = RabbitPort}),
     if ok ->
         ?ERROR_MSG("RabbitMq connection failed: ~s", [ok, Connection]),
         exit({error, Connection});
@@ -32,12 +40,19 @@ start(Host, Opts) ->
     ?INFO_MSG("RabbitMq connection opened: ~s", [ok, Connection]),
 
     {ok, Channel} = amqp_connection:open_channel(Connection),
+    if ok ->
+        ?ERROR_MSG("RabbitMq channel creation failed: ~s", [ok, Channel]),
+        exit({error, Channel});
+       true ->
+        ok
+    end,
     ?INFO_MSG("RabbitMq channel opened: ~s", [ok, Channel]),
-    
+
     ets:new(my_table, [set, named_table, public]),
     ets:insert(my_table, {notif_connection, Connection}),
     ets:insert(my_table, {notif_channel, Channel}),
     ets:insert(my_table, {rabbit_exchange, list_to_binary(RabbitExchange)}),
+    ets:insert(my_table, {rabbit_exchange_type, list_to_binary(RabbitExchangeType)}),
     ejabberd_hooks:add(user_send_packet, Host, ?MODULE, send_message_to_rb, 50),
     ok.
 
@@ -54,6 +69,12 @@ mod_opt_type(rabbit_port) ->
 mod_opt_type(rabbit_host) ->
     econf:string();
 mod_opt_type(rabbit_exchange) ->
+    econf:string();
+mod_opt_type(rabbit_exchange_type) ->
+    econf:string();
+mod_opt_type(rabbit_user) ->
+    econf:string();
+mod_opt_type(rabbit_password) ->
     econf:string().
 
 
@@ -61,7 +82,10 @@ mod_options(Host) ->
     [
         {rabbit_port, 5672},
         {rabbit_host, "host.docker.internal"},
-        {rabbit_exchange, "all_events"}
+        {rabbit_exchange, "all_events"},
+        {rabbit_exchange_type, "direct"},
+        {rabbit_user, "guest"},
+        {rabbit_password, "guest"}
     ].
 
 mod_doc() ->

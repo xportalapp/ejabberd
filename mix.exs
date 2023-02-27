@@ -46,7 +46,7 @@ defmodule Ejabberd.MixProject do
                     :p1_utils, :stringprep, :syntax_tools, :yconf],
      included_applications: [:mnesia, :os_mon,
                              :cache_tab, :eimp, :mqtree, :p1_acme,
-                             :p1_oauth2, :pkix, :xmpp, :amqp_client, :jsx]
+                             :p1_oauth2, :pkix, :xmpp, :amqp_client]
      ++ cond_apps()]
   end
 
@@ -116,8 +116,7 @@ defmodule Ejabberd.MixProject do
      {:stringprep, ">= 1.0.26"},
      {:xmpp, ">= 1.6.0"},
      {:yconf, "~> 1.0"},
-     {:amqp_client, "~> 3.11"},
-     {:jsx, "~> 3.1"}]
+     {:amqp_client, "~> 3.11"}]
     ++ cond_deps()
   end
 
