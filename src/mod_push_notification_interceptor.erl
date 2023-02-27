@@ -31,21 +31,9 @@ start(Host, Opts) ->
             password = list_to_binary(RabbitPassword),
             host = RabbitHost, 
             port = RabbitPort}),
-    if ok ->
-        ?ERROR_MSG("RabbitMq connection failed: ~s", [ok, Connection]),
-        exit({error, Connection});
-       true ->
-        ok
-    end,
     ?INFO_MSG("RabbitMq connection opened: ~s", [ok, Connection]),
 
     {ok, Channel} = amqp_connection:open_channel(Connection),
-    if ok ->
-        ?ERROR_MSG("RabbitMq channel creation failed: ~s", [ok, Channel]),
-        exit({error, Channel});
-       true ->
-        ok
-    end,
     ?INFO_MSG("RabbitMq channel opened: ~s", [ok, Channel]),
 
     ets:new(my_table, [set, named_table, public]),
