@@ -257,6 +257,7 @@ modules:
   mod_push_notification_interceptor:
     rabbit_port: 5672
     rabbit_host: "host.docker.internal"
+    rabbit_vhost: "/"
     rabbit_exchange: "x_portal_send_address_push_notification_exchange_fan"
     rabbit_exchange_type: "fanout"
     rabbit_user: "guest"

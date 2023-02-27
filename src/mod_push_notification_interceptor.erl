@@ -24,12 +24,13 @@ start(Host, Opts) ->
     RabbitExchangeType = maps:get(rabbit_exchange_type, Opts, "direct"),
     RabbitUser = maps:get(rabbit_user, Opts, "guest"),
     RabbitPassword = maps:get(rabbit_password, Opts, "guest"),
-
+    RabbitVHost = maps:get(rabbit_vhost, Opts, "/"),
     {ok, Connection} = amqp_connection:start(
         #amqp_params_network{
             username = list_to_binary(RabbitUser), 
             password = list_to_binary(RabbitPassword),
             host = RabbitHost, 
+            virtual_host = list_to_binary(RabbitVHost),
             port = RabbitPort}),
     ?INFO_MSG("RabbitMq connection opened: ~s", [ok, Connection]),
 
@@ -56,6 +57,8 @@ mod_opt_type(rabbit_port) ->
     econf:int();
 mod_opt_type(rabbit_host) ->
     econf:string();
+mod_opt_type(rabbit_vhost) ->
+    econf:string();
 mod_opt_type(rabbit_exchange) ->
     econf:string();
 mod_opt_type(rabbit_exchange_type) ->
@@ -70,6 +73,7 @@ mod_options(Host) ->
     [
         {rabbit_port, 5672},
         {rabbit_host, "host.docker.internal"},
+        {rabbit_vhost, "/"},
         {rabbit_exchange, "all_events"},
         {rabbit_exchange_type, "direct"},
         {rabbit_user, "guest"},
