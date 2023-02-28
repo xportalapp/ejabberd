@@ -94,7 +94,7 @@ mod_options(Host) ->
         {rabbit_exchange_type, "direct"},
         {rabbit_user, "guest"},
         {rabbit_password, "guest"},
-        {ssl_options, []}
+        {ssl_options, none}
     ].
 
 mod_doc() ->
@@ -109,31 +109,36 @@ mod_doc() ->
 
 -spec send_message_to_rb({stanza(), c2s_state()})
       -> {stanza(), c2s_state()}.
-send_message_to_rb({#message{} = Pkt, #{jid := JID} = C2SState}) ->
+send_message_to_rb({#message{from = From, to = To, type = Type} = Pkt, #{jid := JID} = C2SState}) ->
     ?INFO_MSG("Received message packet ~p", [Pkt]),
     % Get the channel connection
     [{_, Channel}] = ets:lookup(my_table, notif_channel),
     [{_, Exchange}] = ets:lookup(my_table, rabbit_exchange),
+
     % Get the message body and send it to the queue, together with address
     Body = Pkt#message.body,
     {_, _, MyBinaryString} = lists:nth(1, Body),
     
-    PayloadStruct = #{
-        chain => 508, 
-        address => JID#jid.luser, 
-        pushNotification => #{
-            type => <<"newChatMessage">>,
-            title => <<"You have a new message!">>,
-            body => <<"Tap here for more info">>,
-            data => MyBinaryString
-        },
-        isSilent => false
-        },
+    if Type == chat ->
+        PayloadStruct = #{
+            chain => 508, 
+            address => To#jid.luser, 
+            pushNotification => #{
+                type => <<"newChatMessage">>,
+                title => <<"You have a new message!">>,
+                body => <<"Tap here for more info">>,
+                data => MyBinaryString
+            },
+            isSilent => false
+            },
+        
+        % JSON encode the payload
+        Payload = jiffy:encode(PayloadStruct),
+        Publish = #'basic.publish'{exchange = Exchange, routing_key = <<"">>},
+        amqp_channel:cast(Channel, Publish, #amqp_msg{payload=Payload});
+    true -> false
+    end,
     
-    % JSON encode the payload
-    Payload = jiffy:encode(PayloadStruct),
-    Publish = #'basic.publish'{exchange = Exchange, routing_key = <<"">>},
-    amqp_channel:cast(Channel, Publish, #amqp_msg{payload=Payload}),
     LServer = JID#jid.lserver,
     {Pkt, C2SState};
 send_message_to_rb(Acc) ->
