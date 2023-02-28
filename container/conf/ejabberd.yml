@@ -255,13 +255,19 @@ modules:
   mod_version:
     show_os: false
   mod_push_notification_interceptor:
-    rabbit_port: 5672
+    rabbit_port: 5671
     rabbit_host: "host.docker.internal"
     rabbit_vhost: "/"
-    rabbit_exchange: "x_portal_send_address_push_notification_exchange_fan"
+    rabbit_exchange: "x_portal_send_address_push_notification_exchange"
     rabbit_exchange_type: "fanout"
     rabbit_user: "guest"
     rabbit_password: "guest"
+    ssl_options:
+      cacertfile: "/opt/ejabberd/conf/ca.crt"
+      certfile: "/opt/ejabberd/conf/client.crt"
+      keyfile: "/opt/ejabberd/conf/client.key"
+      verify: verify_peer
+      fail_if_no_peer_cert: true
   
 ### Local Variables:
 ### mode: yaml

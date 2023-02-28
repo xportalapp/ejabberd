@@ -25,13 +25,27 @@ start(Host, Opts) ->
     RabbitUser = maps:get(rabbit_user, Opts, "guest"),
     RabbitPassword = maps:get(rabbit_password, Opts, "guest"),
     RabbitVHost = maps:get(rabbit_vhost, Opts, "/"),
+    SslOptions = maps:get(ssl_options, Opts, none),
+
+    % MapSslOptions = #{
+    %     cacertfile => element(2, lists:nth(1, SslOptions)),
+    %     certfile => element(2, lists:nth(2, SslOptions)),
+    %     keyfile => element(2, lists:nth(3, SslOptions)),
+    %     verify => element(2, lists:nth(4, SslOptions)),
+    %     fail_if_no_peer_cert => element(2, lists:nth(5, SslOptions))
+    % },
+
+    ?INFO_MSG("Map cert ~p", [SslOptions]),
+
     {ok, Connection} = amqp_connection:start(
         #amqp_params_network{
             username = list_to_binary(RabbitUser), 
             password = list_to_binary(RabbitPassword),
             host = RabbitHost, 
             virtual_host = list_to_binary(RabbitVHost),
-            port = RabbitPort}),
+            port = RabbitPort,
+            ssl_options = SslOptions
+        }),
     ?INFO_MSG("RabbitMq connection opened: ~s", [ok, Connection]),
 
     {ok, Channel} = amqp_connection:open_channel(Connection),
@@ -66,7 +80,9 @@ mod_opt_type(rabbit_exchange_type) ->
 mod_opt_type(rabbit_user) ->
     econf:string();
 mod_opt_type(rabbit_password) ->
-    econf:string().
+    econf:string();
+mod_opt_type(ssl_options) ->
+    econf:list(econf:any()).
 
 
 mod_options(Host) ->
@@ -77,7 +93,8 @@ mod_options(Host) ->
         {rabbit_exchange, "all_events"},
         {rabbit_exchange_type, "direct"},
         {rabbit_user, "guest"},
-        {rabbit_password, "guest"}
+        {rabbit_password, "guest"},
+        {ssl_options, []}
     ].
 
 mod_doc() ->
