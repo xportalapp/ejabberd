@@ -35,8 +35,6 @@ start(Host, Opts) ->
     %     fail_if_no_peer_cert => element(2, lists:nth(5, SslOptions))
     % },
 
-    ?INFO_MSG("Map cert ~p", [SslOptions]),
-
     {ok, Connection} = amqp_connection:start(
         #amqp_params_network{
             username = list_to_binary(RabbitUser), 
@@ -46,10 +44,10 @@ start(Host, Opts) ->
             port = RabbitPort,
             ssl_options = SslOptions
         }),
-    ?INFO_MSG("RabbitMq connection opened: ~s", [ok, Connection]),
+    ?INFO_MSG("RabbitMq connection opened: ~p", [Connection]),
 
     {ok, Channel} = amqp_connection:open_channel(Connection),
-    ?INFO_MSG("RabbitMq channel opened: ~s", [ok, Channel]),
+    ?INFO_MSG("RabbitMq channel opened: ~p", [Channel]),
 
     ets:new(my_table, [set, named_table, public]),
     ets:insert(my_table, {notif_connection, Connection}),
@@ -60,7 +58,7 @@ start(Host, Opts) ->
     ok.
 
 stop(_Host) ->
-    ?INFO_MSG("Bye bye, ejabberd world!", []),
+    ?INFO_MSG("Bye bye, ejabberd Push Notification module down!", []),
     ok.
 
 depends(_Host, _Opts) ->
@@ -85,7 +83,7 @@ mod_opt_type(ssl_options) ->
     econf:list(econf:any()).
 
 
-mod_options(Host) ->
+mod_options(_Host) ->
     [
         {rabbit_port, 5672},
         {rabbit_host, "host.docker.internal"},
@@ -101,33 +99,41 @@ mod_doc() ->
     #{desc =>
           ?T("This is an example module.")}.
 
--record(rabbit_payload, {
-        address           = "guest",
-        data           = "guest"
-    }).
-
-
 -spec send_message_to_rb({stanza(), c2s_state()})
       -> {stanza(), c2s_state()}.
-send_message_to_rb({#message{from = From, to = To, type = Type} = Pkt, #{jid := JID} = C2SState}) ->
+send_message_to_rb({#message{from = From, to = To, type = Type, sub_els = SubEls} = Pkt, #{jid := JID} = C2SState}) ->
     ?INFO_MSG("Received message packet ~p", [Pkt]),
+
     % Get the channel connection
     [{_, Channel}] = ets:lookup(my_table, notif_channel),
-    [{_, Exchange}] = ets:lookup(my_table, rabbit_exchange),
 
-    % Get the message body and send it to the queue, together with address
+    % Get the message body, set it to empty string if none
     Body = Pkt#message.body,
-    {_, _, MyBinaryString} = lists:nth(1, Body),
+    EncryptedMessage = try lists:nth(1, Body) of
+        {_, _, EncryptedMessageFun} -> EncryptedMessageFun
+    catch _:_ -> <<"">>
+    end,
     
-    if Type == chat ->
+    % Get the message type: it has to be partially-encrypted-message
+    IsPartial = try lists:foreach(
+        fun(#xmlel{name = <<"body-type">>, attrs = [], children = [{xmlcdata, <<"partially-encrypted-message">>}]}) ->
+            ok
+        end,
+        SubEls
+    ) catch _:_ ->
+        false
+    end,
+
+    if Type == chat andalso IsPartial == ok ->
         PayloadStruct = #{
             chain => 508, 
-            address => To#jid.luser, 
+            sendAddress => From#jid.luser,
+            destinationAddress => To#jid.luser, 
             pushNotification => #{
                 type => <<"newChatMessage">>,
                 title => <<"You have a new message!">>,
                 body => <<"Tap here for more info">>,
-                data => MyBinaryString
+                data => EncryptedMessage
             },
             isSilent => false
             },
@@ -138,8 +144,7 @@ send_message_to_rb({#message{from = From, to = To, type = Type} = Pkt, #{jid := 
         amqp_channel:cast(Channel, Publish, #amqp_msg{payload=Payload});
     true -> false
     end,
-    
-    LServer = JID#jid.lserver,
+
     {Pkt, C2SState};
 send_message_to_rb(Acc) ->
     Acc.
