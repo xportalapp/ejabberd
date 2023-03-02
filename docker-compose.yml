@@ -13,5 +13,4 @@ services:
       - "5347:5347"
     volumes:
       - './container/conf/ejabberd.yml:/opt/ejabberd/conf/ejabberd.yml:ro'
-      - './container/conf:/opt/ejabberd/conf:ro'
       - './container/logs:/opt/ejabberd/logs:rw'

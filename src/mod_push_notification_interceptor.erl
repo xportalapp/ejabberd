@@ -58,7 +58,7 @@ start(Host, Opts) ->
     ok.
 
 stop(_Host) ->
-    ?INFO_MSG("Bye bye, ejabberd Push Notification module down!", []),
+    ?INFO_MSG("Push notification module stopped.", []),
     ok.
 
 depends(_Host, _Opts) ->
@@ -101,12 +101,13 @@ mod_doc() ->
 
 -spec send_message_to_rb({stanza(), c2s_state()})
       -> {stanza(), c2s_state()}.
-send_message_to_rb({#message{from = From, to = To, type = Type, sub_els = SubEls} = Pkt, #{jid := JID} = C2SState}) ->
+send_message_to_rb({#message{from = From, to = To, type = Type, sub_els = SubEls} = Pkt, C2SState}) ->
     ?INFO_MSG("Received message packet ~p", [Pkt]),
 
     % Get the channel connection
     [{_, Channel}] = ets:lookup(my_table, notif_channel),
-
+    [{_, Exchange}] = ets:lookup(my_table, rabbit_exchange),
+    
     % Get the message body, set it to empty string if none
     Body = Pkt#message.body,
     EncryptedMessage = try lists:nth(1, Body) of
@@ -127,13 +128,15 @@ send_message_to_rb({#message{from = From, to = To, type = Type, sub_els = SubEls
     if Type == chat andalso IsPartial == ok ->
         PayloadStruct = #{
             chain => 508, 
-            sendAddress => From#jid.luser,
-            destinationAddress => To#jid.luser, 
+            address => To#jid.luser, 
             pushNotification => #{
                 type => <<"newChatMessage">>,
                 title => <<"You have a new message!">>,
                 body => <<"Tap here for more info">>,
-                data => EncryptedMessage
+                data => #{
+                    message => EncryptedMessage,
+                    senderAddress => From#jid.luser
+                }
             },
             isSilent => false
             },
