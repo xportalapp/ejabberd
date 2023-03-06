@@ -124,7 +124,7 @@ send_message_to_rb({#message{from = From, to = To, type = Type, sub_els = SubEls
     ) catch _:_ ->
         false
     end,
-
+    
     if Type == chat andalso IsPartial == ok ->
         PayloadStruct = #{
             chain => 508, 
@@ -134,7 +134,7 @@ send_message_to_rb({#message{from = From, to = To, type = Type, sub_els = SubEls
                 title => <<"You have a new message!">>,
                 body => <<"Tap here for more info">>,
                 data => #{
-                    message => EncryptedMessage,
+                    message => jiffy:decode(EncryptedMessage),
                     senderAddress => From#jid.luser
                 }
             },
