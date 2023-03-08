@@ -10,6 +10,7 @@
 -include_lib("xmpp/include/xmpp.hrl").
 -include("mod_mam.hrl").
 -include_lib("amqp_client/include/amqp_client.hrl").
+-include("mod_roster.hrl").
 
 -type c2s_state() :: ejabberd_c2s:state().
 
@@ -99,6 +100,17 @@ mod_doc() ->
     #{desc =>
           ?T("This is an example module.")}.
 
+% get_message_preview(SubEls) ->
+%     get_message_preview(SubEls, []).
+% get_message_preview([], Preview) ->
+%     Preview;
+get_message_preview([{xmlel, <<"message-preview">>, _, [{xmlcdata, Data}]} | _]) ->
+    Data;
+get_message_preview([_ | Tail]) ->
+    get_message_preview(Tail);
+get_message_preview([]) -> 
+    [].
+
 -spec send_message_to_rb({stanza(), c2s_state()})
       -> {stanza(), c2s_state()}.
 send_message_to_rb({#message{from = From, to = To, type = Type, sub_els = SubEls} = Pkt, C2SState}) ->
@@ -115,17 +127,26 @@ send_message_to_rb({#message{from = From, to = To, type = Type, sub_els = SubEls
     catch _:_ -> <<"">>
     end,
     
-    % Get the message type: it has to be partially-encrypted-message
-    IsPartial = try lists:foreach(
-        fun(#xmlel{name = <<"body-type">>, attrs = [], children = [{xmlcdata, <<"partially-encrypted-message">>}]}) ->
-            ok
-        end,
-        SubEls
-    ) catch _:_ ->
-        false
+    % Get the roster items
+    Items = mod_roster:get_roster(From#jid.luser, From#jid.lserver),
+    ToFind = To#jid.luser,
+
+    % Get the subscription item and check if subscription is both
+    SubscriptionItem = lists:filter(fun(Roster) -> element(1, Roster#roster.jid) == ToFind end, Items),
+    ?INFO_MSG("Subscription item is ~p", [SubscriptionItem]),
+
+    % Validate subscription is both
+    Subscription = case SubscriptionItem of
+        [Item] -> Item#roster.subscription;
+        [] -> false;
+        _ -> false
     end,
-    
-    if Type == chat andalso IsPartial == ok ->
+
+    MessagePreviewContent = get_message_preview(SubEls),
+    ?INFO_MSG("Preview message is ~p", [MessagePreviewContent]),
+
+    % Check if the message is a chat message and if it is partially encrypted
+    if Type == chat andalso Subscription == both ->
         PayloadStruct = #{
             chain => 508, 
             address => To#jid.luser, 
@@ -134,7 +155,7 @@ send_message_to_rb({#message{from = From, to = To, type = Type, sub_els = SubEls
                 title => <<"You have a new message!">>,
                 body => <<"Tap here for more info">>,
                 data => #{
-                    message => jiffy:decode(EncryptedMessage),
+                    message => MessagePreviewContent,
                     senderAddress => From#jid.luser
                 }
             },
