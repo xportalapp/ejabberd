@@ -135,17 +135,18 @@ send_message_to_rb({#message{from = From, to = To, type = Type, sub_els = SubEls
     SubscriptionItem = lists:filter(fun(Roster) -> element(1, Roster#roster.jid) == ToFind end, Items),
     ?INFO_MSG("Subscription item is ~p", [SubscriptionItem]),
 
-    % Validate subscription is both
+    % Take subscription value
     Subscription = case SubscriptionItem of
         [Item] -> Item#roster.subscription;
         [] -> false;
         _ -> false
     end,
 
+    % Get preview message content or empty if none
     MessagePreviewContent = get_message_preview(SubEls),
     ?INFO_MSG("Preview message is ~p", [MessagePreviewContent]),
 
-    % Check if the message is a chat message and if it is partially encrypted
+    % Check if the message is a chat message and the subscription is both
     if Type == chat andalso Subscription == both ->
         PayloadStruct = #{
             chain => 508, 
