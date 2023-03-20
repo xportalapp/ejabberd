@@ -166,7 +166,8 @@ send_message_to_rb({#message{from = From, to = To, type = Type, sub_els = SubEls
         % JSON encode the payload
         Payload = jiffy:encode(PayloadStruct),
         Publish = #'basic.publish'{exchange = Exchange, routing_key = <<"">>},
-        amqp_channel:cast(Channel, Publish, #amqp_msg{payload=Payload});
+        amqp_channel:cast(Channel, Publish, #amqp_msg{payload=Payload}),
+        ?INFO_MSG("Message sent to RabbitMQ: ~p", [Payload]);
     true -> false
     end,
 
