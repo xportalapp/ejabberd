@@ -109,7 +109,7 @@ get_message_preview([{xmlel, <<"message-preview">>, _, [{xmlcdata, Data}]} | _])
 get_message_preview([_ | Tail]) ->
     get_message_preview(Tail);
 get_message_preview([]) -> 
-    [].
+    none.
 
 -spec send_message_to_rb({stanza(), c2s_state()})
       -> {stanza(), c2s_state()}.
@@ -147,20 +147,11 @@ send_message_to_rb({#message{from = From, to = To, type = Type, sub_els = SubEls
     ?INFO_MSG("Preview message is ~p", [MessagePreviewContent]),
 
     % Check if the message is a chat message and the subscription is both
-    if Type == chat andalso Subscription == both ->
+    if Type == chat andalso Subscription == both andalso MessagePreviewContent /= none->
         PayloadStruct = #{
-            chain => 508, 
-            address => To#jid.luser, 
-            pushNotification => #{
-                type => <<"newChatMessage">>,
-                title => <<"You have a new message!">>,
-                body => <<"Tap here for more info">>,
-                data => #{
-                    message => MessagePreviewContent,
-                    senderAddress => From#jid.luser
-                }
-            },
-            isSilent => false
+            message => MessagePreviewContent,
+            senderAddress => From#jid.luser,
+            receiverAddress => To#jid.luser
             },
         
         % JSON encode the payload
