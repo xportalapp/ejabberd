@@ -7,6 +7,7 @@
 %% Required by ?T macro
 -include("translate.hrl").
 -include("ejabberd_commands.hrl").
+-include("ejabberd_sm.hrl").
 -include_lib("xmpp/include/xmpp.hrl").
 -include("mod_mam.hrl").
 -include_lib("amqp_client/include/amqp_client.hrl").
@@ -133,7 +134,7 @@ send_message_to_rb({#message{from = From, to = To, type = Type, sub_els = SubEls
 
     % Get the subscription item and check if subscription is both
     SubscriptionItem = lists:filter(fun(Roster) -> element(1, Roster#roster.jid) == ToFind end, Items),
-    ?INFO_MSG("Subscription item is ~p", [SubscriptionItem]),
+    % ?INFO_MSG("Subscription item is ~p", [SubscriptionItem]),
 
     % Take subscription value
     Subscription = case SubscriptionItem of
@@ -144,10 +145,18 @@ send_message_to_rb({#message{from = From, to = To, type = Type, sub_els = SubEls
 
     % Get preview message content or empty if none
     MessagePreviewContent = get_message_preview(SubEls),
-    ?INFO_MSG("Preview message is ~p", [MessagePreviewContent]),
+    % ?INFO_MSG("Preview message is ~p", [MessagePreviewContent]),
 
+    % Check if the receiver user is online
+    IsToUserOffline =  case ejabberd_sm:get_user_present_resources(To#jid.luser, To#jid.lserver) of
+        [] -> true;
+        _ -> false
+    end,
+
+    % ?INFO_MSG("Presence is ~p", [IsToUserOffline]),
     % Check if the message is a chat message and the subscription is both
-    if Type == chat andalso Subscription == both andalso MessagePreviewContent /= none->
+    if Type == chat andalso Subscription == both andalso MessagePreviewContent /= none
+        andalso IsToUserOffline == true ->
         PayloadStruct = #{
             message => MessagePreviewContent,
             senderAddress => From#jid.luser,
