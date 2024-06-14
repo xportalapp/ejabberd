@@ -168,10 +168,10 @@ send_message_to_rb({#message{from = From,
 
     % ?INFO_MSG("Presence is ~p", [IsToUserOffline]),
     % Check if the message is a chat message and the subscription is both
-    if Type == chat
+    if (Type == chat
        andalso Subscription == both
        andalso MessagePreviewContent /= none
-       andalso IsToUserOffline == true
+       andalso IsToUserOffline == true)
        orelse From#jid.luser
               == <<"erd1lpc6wjh2hav6q50p8y6a44r2lhtnseqksygakjfgep6c9uduchkqphzu6t">> ->
            PayloadStruct =
