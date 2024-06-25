@@ -13,7 +13,9 @@ async function bootstrap() {
     apiUrl: "https://devnet-api.multiversx.com",
     acceptedOrigins: acceptedOrigins,
     maxExpirySeconds: 7200,
+    skipLegacyValidation: false,
   });
+
   process.stdin.on("data", async (data) => {
     const dataString = data.toString();
     logs += data;
