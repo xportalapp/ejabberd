@@ -5,7 +5,10 @@
         "author": "",
         "private": true,
         "dependencies": {
-                "@multiversx/sdk-native-auth-server": "^0.2.4",
+                "@multiversx/sdk-core": "^12.x",
+                "@multiversx/sdk-native-auth-server": "^1.0.17",
+                "bignumber.js": "^9.0.1",
+                "dotenv": "^16.4.5",
                 "rimraf": "^3.0.2"
         }
 }
