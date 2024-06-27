@@ -12,5 +12,8 @@ services:
       - "5443:5443"
       - "5347:5347"
     volumes:
-      - './container/conf/ejabberd.yml:/opt/ejabberd/conf/ejabberd.yml:ro'
-      - './container/logs:/opt/ejabberd/logs:rw'
+      - "./container/conf/ejabberd.yml:/opt/ejabberd/conf/ejabberd.yml:ro"
+      - "./container/logs:/opt/ejabberd/logs:rw"
+      - "./js:/opt/ejabberd/js:rw"
+    environment:
+      - ACCEPTED_ORIGINS=http://localhost
