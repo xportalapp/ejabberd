@@ -8,12 +8,10 @@ require("dotenv").config();
 
 async function bootstrap() {
   const acceptedOrigins = process.env.ACCEPTED_ORIGINS.split(",");
+  const apiUrl = process.env.NATIVE_AUTH_API_URL;
 
   const nativeAuthServer = new sdk_native_auth_server_1.NativeAuthServer({
-    apiUrl:
-      (_a = process.env.NATIVE_AUTH_API_URL) !== null && _a !== void 0
-        ? _a
-        : "https://devnet-api.multiversx.com",
+    apiUrl: apiUrl != null ? apiUrl : "https://devnet-api.multiversx.com",
     acceptedOrigins: acceptedOrigins,
     maxExpirySeconds: 7200,
     skipLegacyValidation: false,
@@ -55,12 +53,7 @@ const writeResult = (isSuccess) => {
     buffer = Buffer.from([0, 2, 0, 0]);
   }
   process.stdout.write(buffer);
-  fs.writeFile("/opt/ejabberd/logs/log.txt", logs, (err) => {
-    if (err) {
-      console.error(err);
-    }
-    // file written successfully
-  });
+  process.stdout.write(Buffer.from(logs));
 };
 bootstrap();
 //# sourceMappingURL=main.js.map
