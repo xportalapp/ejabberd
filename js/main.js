@@ -10,7 +10,10 @@ async function bootstrap() {
   const acceptedOrigins = process.env.ACCEPTED_ORIGINS.split(",");
 
   const nativeAuthServer = new sdk_native_auth_server_1.NativeAuthServer({
-    apiUrl: "https://devnet-api.multiversx.com",
+    apiUrl:
+      (_a = process.env.NATIVE_AUTH_API_URL) !== null && _a !== void 0
+        ? _a
+        : "https://devnet-api.multiversx.com",
     acceptedOrigins: acceptedOrigins,
     maxExpirySeconds: 7200,
     skipLegacyValidation: false,
