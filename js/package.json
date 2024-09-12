@@ -1,0 +1,14 @@
+{
+        "name": "ejabberd-native-auth",
+        "version": "0.0.1",
+        "description": "",
+        "author": "",
+        "private": true,
+        "dependencies": {
+                "@multiversx/sdk-core": "^12.x",
+                "@multiversx/sdk-native-auth-server": "^1.0.17",
+                "bignumber.js": "^9.0.1",
+                "dotenv": "^16.4.5",
+                "rimraf": "^3.0.2"
+        }
+}
